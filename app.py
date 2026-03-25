@@ -4,7 +4,7 @@ import time
 
 # --- 1. SETTINGS ---
 # BE CAREFUL: Ensure there are no spaces before or after your key
-API_KEY = "sk-fxatwjopbujvagcteqmwsqjfhuwudfiwryanxnboubgfmnbm"
+API_KEY = "sk-wrdzfvvcrzsflxjeuhbefwvkgfkehgkaepligohzypzltcny"
 
 # These must be exactly as written
 GENERATE_URL = "https://api.siliconflow.cn/v1/video/text-to-video"
