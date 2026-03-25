@@ -2,68 +2,65 @@ import streamlit as st
 import requests
 import time
 
-# --- 1. CONFIGURATION ---
-# PASTE YOUR ACTUAL KEY BETWEEN THE QUOTES BELOW
-API_KEY = "sk-f*******************************************mnbm"
+# --- 1. SETTINGS ---
+# BE CAREFUL: Ensure there are no spaces before or after your key
+API_KEY = "PASTE_YOUR_SILICONFLOW_KEY_HERE"
 
+# These must be exactly as written
 GENERATE_URL = "https://api.siliconflow.cn/v1/video/text-to-video"
 CHECK_STATUS_URL = "https://api.siliconflow.cn/v1/video/get-result"
 
-st.set_page_config(page_title="TheDailyDesign.AI | Video Studio", layout="centered")
+st.set_page_config(page_title="TheDailyDesign.AI Video Studio")
+st.title("🎬 AI Video Studio")
 
-# --- 2. USER INTERFACE ---
-st.title("🎬 TheDailyDesign.AI Video Studio")
-st.info("Creating cinematic AI videos for your brand.")
+prompt = st.text_area("Describe your video:", placeholder="A cinematic 8k shot of...")
 
-prompt = st.text_area("Describe your video:", 
-                     placeholder="An ultra-realistic 8k portrait of a person in cinematic lighting...")
-
-# --- 3. THE GENERATION PROCESS ---
 if st.button("Generate Video"):
     if not prompt:
-        st.warning("Please enter a prompt first!")
-    elif "YOUR_SILICONFLOW" in API_KEY:
-        st.error("Please replace the placeholder with your actual API Key.")
+        st.warning("Please enter a prompt.")
     else:
         headers = {
             "Authorization": f"Bearer {API_KEY}",
             "Content-Type": "application/json"
         }
         
+        # This model name must be exact
         payload = {
-            "model": "deepseek-ai/Wan2.1-T2V-14B", # Professional high-quality model
+            "model": "deepseek-ai/Wan2.1-T2V-14B",
             "prompt": prompt
         }
 
-        with st.spinner("🚀 Sending request to AI server..."):
+        with st.spinner("Connecting to AI..."):
             try:
                 response = requests.post(GENERATE_URL, json=payload, headers=headers)
+                
+                # --- DEBUG SECTION ---
+                if response.status_code != 200:
+                    st.error(f"Server Error Code: {response.status_code}")
+                    st.write("The server said: ", response.text) 
+                    st.stop() # Stops the app so we can read the error
+                
                 res_data = response.json()
                 
                 if "id" in res_data:
                     job_id = res_data["id"]
+                    status_ui = st.empty()
                     
-                    # --- 4. POLLING (WAITING FOR VIDEO) ---
-                    status_placeholder = st.empty()
                     while True:
-                        status_placeholder.info("⌛ AI is rendering your video... this usually takes 1-2 minutes.")
-                        time.sleep(10) # Wait 10 seconds before checking
+                        status_ui.info("⌛ Rendering... please wait 60 seconds.")
+                        time.sleep(10)
                         
-                        check_req = requests.get(f"{CHECK_STATUS_URL}?id={job_id}", headers=headers)
-                        status_data = check_req.json()
+                        check = requests.get(f"{CHECK_STATUS_URL}?id={job_id}", headers=headers)
+                        status_data = check.json()
                         
                         if status_data.get("status") == "SUCCEED":
-                            video_url = status_data.get("video_url")
-                            status_placeholder.empty()
-                            st.success("✅ Video Ready!")
-                            st.video(video_url)
-                            st.download_button("Download Video", video_url)
+                            st.video(status_data.get("video_url"))
                             break
                         elif status_data.get("status") == "FAILED":
-                            st.error("The AI failed to generate this video. Try a different prompt.")
+                            st.error("Generation failed.")
                             break
                 else:
-                    st.error(f"Error: {res_data.get('message', 'Failed to start.')}")
-            
+                    st.error("Could not find Task ID in response.")
+
             except Exception as e:
-                st.error(f"Connection Error: {e}")
+                st.error(f"App Error: {e}")
